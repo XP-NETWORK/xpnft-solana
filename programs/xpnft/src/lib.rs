@@ -19,6 +19,11 @@ pub mod xpnft {
     }
 
     pub fn mint_to(ctx: Context<MintTokens>) -> ProgramResult {
+        // First check that this token didn't mint anything yet
+        if ctx.accounts.mint.supply != 0 {
+            return Err(ProgramError::InvalidArgument)
+        };
+        
         // Mint the token and delete mint authority
         token::mint_to(ctx.accounts.mint_to(), 1)?;
         token::set_authority(
