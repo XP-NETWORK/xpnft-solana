@@ -67,7 +67,7 @@ impl<'info> From<&MintTokens<'info>> for CpiContext<'_, '_, '_, 'info, MintTo<'i
         let cpi_accounts = MintTo {
             mint: accs.mint.to_account_info(),
             to: accs.token.to_account_info(),
-            authority: accs.mint_authority.to_account_info()
+            authority: accs.mint_authority.to_account_info(),
         };
         CpiContext::new(cpi_program, cpi_accounts)
     }
