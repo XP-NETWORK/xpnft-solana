@@ -23,7 +23,7 @@ describe('xpnft', () => {
   });
 
   it("Mints a token", async () => {
-    await program.rpc.mintTokens({
+    await program.rpc.mintTo({
       accounts: {
         mintAuthority: provider.wallet.publicKey,
         mint,

@@ -95,7 +95,7 @@ async function main() {
   let mint = await createMint(provider);
   let from = await createTokenAccount(provider, mint, provider.wallet.publicKey);
 
-  const tx = await program.rpc.mintTokens({
+  const tx = await program.rpc.mintTo({
     accounts: {
       mintAuthority: provider.wallet.publicKey,
       mint,

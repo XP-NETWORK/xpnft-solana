@@ -1,7 +1,8 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program_option::COption;
 use anchor_lang::solana_program::system_program;
-use anchor_spl::token::{self, Mint, MintTo, TokenAccount};
+use anchor_spl::token::{self, Mint, MintTo, SetAuthority, TokenAccount};
+use spl_token::instruction::AuthorityType;
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
@@ -17,8 +18,15 @@ pub mod xpnft {
         Ok(())
     }
 
-    pub fn mint_tokens(ctx: Context<MintTokens>) -> ProgramResult {
-        token::mint_to((&*ctx.accounts).into(), 1)
+    pub fn mint_to(ctx: Context<MintTokens>) -> ProgramResult {
+        // Mint the token and delete mint authority
+        token::mint_to(ctx.accounts.mint_to(), 1)?;
+        token::set_authority(
+            ctx.accounts.null_authority(),
+            AuthorityType::MintTokens,
+            None,
+        )?;
+        Ok(())
     }
 }
 
@@ -61,14 +69,23 @@ pub struct MintTokens<'info> {
     pub token_program: AccountInfo<'info>,
 }
 
-impl<'info> From<&MintTokens<'info>> for CpiContext<'_, '_, '_, 'info, MintTo<'info>> {
-    fn from(accs: &MintTokens<'info>) -> Self {
-        let cpi_program = accs.token_program.clone();
-        let cpi_accounts = MintTo {
-            mint: accs.mint.to_account_info(),
-            to: accs.token.to_account_info(),
-            authority: accs.mint_authority.to_account_info(),
+impl<'info> MintTokens<'info> {
+    fn mint_to(&self) -> CpiContext<'_, '_, '_, 'info, MintTo<'info>> {
+        let account = MintTo {
+            mint: self.mint.to_account_info().clone(),
+            to: self.token.to_account_info().clone(),
+            authority: self.mint_authority.to_account_info().clone(),
         };
-        CpiContext::new(cpi_program, cpi_accounts)
+        let program = self.token_program.to_account_info();
+        CpiContext::new(program, account)
+    }
+
+    fn null_authority(&self) -> CpiContext<'_, '_, '_, 'info, SetAuthority<'info>> {
+        let account = SetAuthority {
+            current_authority: self.mint_authority.to_account_info().clone(),
+            account_or_mint: self.mint.to_account_info().clone(),
+        };
+        let program = self.token_program.clone();
+        CpiContext::new(program, account)
     }
 }
